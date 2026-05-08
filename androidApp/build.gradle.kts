@@ -4,6 +4,14 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Load keystore properties
+val keystorePropsFile = rootProject.file("androidApp/keystore.properties")
+val keystoreProps = if (keystorePropsFile.exists()) {
+    java.util.Properties().apply { load(keystorePropsFile.inputStream()) }
+} else {
+    null
+}
+
 android {
     namespace = "com.kmpapp.android"
     compileSdk = 34
@@ -14,15 +22,25 @@ android {
         versionCode = 1
         versionName = "1.0.0"
     }
+    signingConfigs {
+        create("release") {
+            storeFile = file("keystore.jks")
+            storePassword = keystoreProps?.getProperty("storePassword") ?: System.getenv("KEYSTORE_PASSWORD") ?: "KmpApp2024"
+            keyAlias = keystoreProps?.getProperty("keyAlias") ?: System.getenv("KEY_ALIAS") ?: "kmpapp"
+            keyPassword = keystoreProps?.getProperty("keyPassword") ?: System.getenv("KEY_PASSWORD") ?: "KmpApp2024"
+        }
+    }
     buildTypes {
         debug {
             isDebuggable = true
         }
         release {
             isMinifyEnabled = false
-            isDebuggable = false
-            // Uses default debug signing for CI
-            // For production: configure signingConfigs with your keystore
+            signingConfig = signingConfigs.getByName("release")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
     compileOptions {
