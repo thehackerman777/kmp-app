@@ -51,35 +51,30 @@ jobs:
         run: chmod +x gradlew
 
       # ──────────────────────────────────────────────
-      # 1. ANDROID APK (Debug)
+      # 1. ANDROID APK
       # ──────────────────────────────────────────────
       - name: Build Android APK (Debug)
         run: ./gradlew :androidApp:assembleDebug --no-daemon
 
-      - name: Upload APK (Debug) — Artifact
+      - name: Build Android APK (Release - Signed)
+        run: ./gradlew :androidApp:assembleRelease --no-daemon
+
+      - name: Upload APK Debug — Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-app-debug
           path: androidApp/build/outputs/apk/debug/*.apk
           compression-level: 0
 
-      # ──────────────────────────────────────────────
-      # 2. ANDROID APK (Release) — unsigned but usable
-      # ──────────────────────────────────────────────
-      - name: Build Android APK (Release)
-        run: ./gradlew :androidApp:assembleRelease --no-daemon
-        continue-on-error: true
-
-      - name: Upload APK (Release) — Artifact
+      - name: Upload APK Release — Artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-app-release
           path: androidApp/build/outputs/apk/release/*.apk
           compression-level: 0
-        continue-on-error: true
 
       # ──────────────────────────────────────────────
-      # 3. DESKTOP APP
+      # 2. DESKTOP APP
       # ──────────────────────────────────────────────
       - name: Build Desktop App
         run: ./gradlew :desktopApp:packageDistributionForCurrentOS --no-daemon
@@ -92,7 +87,7 @@ jobs:
           if-no-files-found: warn
 
       # ──────────────────────────────────────────────
-      # 4. BACKEND JAR
+      # 3. BACKEND JAR
       # ──────────────────────────────────────────────
       - name: Build Backend JAR
         run: ./gradlew :backend:jar --no-daemon
@@ -105,7 +100,7 @@ jobs:
           compression-level: 0
 
       # ──────────────────────────────────────────────
-      # 5. WEB APP
+      # 4. WEB APP
       # ──────────────────────────────────────────────
       - name: Build Web App
         run: |
@@ -121,7 +116,26 @@ jobs:
           compression-level: 0
 
       # ──────────────────────────────────────────────
-      # 6. GITHUB PAGES (web app)
+      # 5. RELEASE (only on tag push v*)
+      # ──────────────────────────────────────────────
+      - name: Create Release & Upload Assets
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+          generate_release_notes: true
+          files: |
+            androidApp/build/outputs/apk/debug/*.apk
+            androidApp/build/outputs/apk/release/*.apk
+            backend/build/libs/*.jar
+            desktopApp/build/compose/binaries/main/**
+          fail_on_unmatched_files: false
+
+      # ──────────────────────────────────────────────
+      # 6. GITHUB PAGES (web app - main branch only)
       # ──────────────────────────────────────────────
       - name: Setup Pages
         if: github.ref == 'refs/heads/main'
@@ -137,31 +151,3 @@ jobs:
         if: github.ref == 'refs/heads/main'
         id: deployment
         uses: actions/deploy-pages@v4
-
-      # ──────────────────────────────────────────────
-      # 7. RELEASE ASSETS (when tag is pushed)
-      # ──────────────────────────────────────────────
-      - name: Upload Assets to Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: |
-            androidApp/build/outputs/apk/debug/*.apk
-            androidApp/build/outputs/apk/release/*.apk
-            backend/build/libs/*.jar
-            webApp/dist/
-          tag: ${{ github.ref }}
-          file_behavior: replace
-          overwrite: true
-          body: |
-            ## 📦 Release ${{ github.ref_name }}
-
-            ### Cambios
-            _Automatically generated from commit ${{ github.sha }}_
-
-            ### Archivos
-            - `android-app-debug.apk` — App Android (firma debug)
-            - `android-app-release.apk` — App Android (sin firmar)
-            - `backend.jar` — Backend Ktor
-            - `web-app/` — Frontend web estático
