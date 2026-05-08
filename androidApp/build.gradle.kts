@@ -19,7 +19,7 @@ android {
             isDebuggable = true
         }
         release {
-            isMinSdkEnabled = false
+            isMinifyEnabled = false
             isDebuggable = false
             // Uses default debug signing for CI
             // For production: configure signingConfigs with your keystore
