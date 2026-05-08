@@ -4,14 +4,6 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
-// Load keystore properties
-val keystorePropsFile = rootProject.file("androidApp/keystore.properties")
-val keystoreProps = if (keystorePropsFile.exists()) {
-    java.util.Properties().apply { load(keystorePropsFile.inputStream()) }
-} else {
-    null
-}
-
 android {
     namespace = "com.kmpapp.android"
     compileSdk = 34
@@ -25,9 +17,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("keystore.jks")
-            storePassword = keystoreProps?.getProperty("storePassword") ?: System.getenv("KEYSTORE_PASSWORD") ?: "KmpApp2024"
-            keyAlias = keystoreProps?.getProperty("keyAlias") ?: System.getenv("KEY_ALIAS") ?: "kmpapp"
-            keyPassword = keystoreProps?.getProperty("keyPassword") ?: System.getenv("KEY_PASSWORD") ?: "KmpApp2024"
+            storePassword = "KmpApp2024"
+            keyAlias = "kmpapp"
+            keyPassword = "KmpApp2024"
         }
     }
     buildTypes {
