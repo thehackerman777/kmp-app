@@ -15,7 +15,15 @@ android {
         versionName = "1.0.0"
     }
     buildTypes {
-        release { isMinifyEnabled = false }
+        debug {
+            isDebuggable = true
+        }
+        release {
+            isMinSdkEnabled = false
+            isDebuggable = false
+            // Uses default debug signing for CI
+            // For production: configure signingConfigs with your keystore
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -34,5 +42,5 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-    debugImplementation("androidx.compose.ui:ui-tooling:1.7.6")
+    debugImplementation("androidx.compose.ui:ui-tooling")
 }
